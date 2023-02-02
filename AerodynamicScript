@@ -1,0 +1,127 @@
+##Aerodynamic Airfoil Analysis Script
+#Scipt takes in pressure field + wall shear stress, so this script will work with any fluent software that outputs a file
+#here we take in given functions for pressure, wall shear and profile
+
+
+##instructions for running the script, assuming you have python set up: run the script, the first plot for part a will appear.
+#Then, exit out of that plot and the second plot should appear. I have left a print statement for part C commented, feel free to check
+#either the entire vector or the dimension of the vector (len). I used a finite difference method to compute the derivatives for part A,
+#which I applied as a convolution rather than a matrix multiplication.
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+x=np.linspace(0,1.2,121)
+
+a=0.6
+b=0.1
+def y(x,a,b):
+    y1upper=(b/(a))*((3*x)-(2*(x**2)/a))
+    y2upper=2*b-(b/a)*x
+    y1lower=(b/(a**2))*((2*x/a)-3)*(x**2)
+    y2lower=-b+(3*b/(a**2))*((x-a)**2)-(2*b/(a**3))*((x-a)**3)
+    yUpper=np.hstack((y1upper[0:(0.5*120)],y2upper[60:121]))
+    yLower=np.hstack((y1lower[0:(0.5*120)],y2lower[60:121]))
+    ##calculating derivatives using finite difference convolution, O(dx^2), I could have done this analytically but there was no rule
+    dx=0.01
+    kernel=[-0.5/dx,0,0.5/dx]
+    dyUpperdx=np.convolve(yUpper,kernel,mode='same')
+    dyLowerdx=np.convolve(yLower,kernel,mode='same')
+    dyLowerdx[0]=0
+    dyLowerdx[120]=0
+    dyUpperdx[0]=dyLowerdx[1]
+    dyUpperdx[120]=dyUpperdx[119]
+    return(yUpper,yLower,dyUpperdx,dyLowerdx)
+yUpper,yLower,dyUpperdx,dyLowerdx=y(x,a,b)
+plt.plot(x, yUpper, 'o',label='yUpper')
+plt.plot(x,yLower,'o',label='yLower')
+plt.plot(x,dyUpperdx,'o',label='dy/dx Upper')
+plt.plot(x,dyLowerdx,'o',label='dy/dx Lower')
+
+
+# add labels to the axes
+plt.xlabel('X axis')
+plt.ylabel('Y axis')
+plt.legend()
+# show the plot
+plt.show()
+c=1.2
+xstar=x/c
+def P(xstar):
+    #function that takes in x and returns pressure
+    Pupper=(10**7)*((13.707*xstar**6)-(46.0521*xstar**5)+(57.501*xstar**4)-(32.3013*xstar**3)+(7.9526*xstar**2)-(0.789*xstar)+0.010875)
+    Plower=(10**7)*((1.54976*xstar**6)-(3.94752*xstar**5)+(3.6208*xstar**4)-(1.37922*xstar**3)+(0.166637*xstar**2)-(0.007725*xstar)+0.010875)
+
+    return (Pupper,Plower)
+Pupper,Plower=P(xstar)
+plt.plot(xstar, Pupper, 'o',label='Upper Pressure')
+plt.plot(xstar,Plower,'o',label='Lower Pressure')
+plt.xlabel('X axis')
+plt.ylabel('Y axis')
+plt.legend()
+plt.show()
+##since we have passed function calls that compute the derivatives and profiles, we can make an averaging matrix (or better yet, a convolution) 
+# to compute the center values for PART C
+averagingKernel=[0.5,0.5]
+ycenterUpper=np.convolve(yUpper,averagingKernel,mode='valid')
+ycenterLower=np.convolve(yLower,averagingKernel,mode='valid')
+dyLowerdxCenter=np.convolve(dyLowerdx,averagingKernel,mode='valid')
+dyUpperdxCenter=np.convolve(dyUpperdx,averagingKernel,mode='valid')
+xcenter=np.convolve(x,averagingKernel,mode='valid')
+
+#using ds=sqrt(1+(dy/dx^2))dx for part D
+dx=0.01
+dsUpper=dx*(1+(dyUpperdxCenter)**2)**0.5
+dsLower=dx*(1+(dyLowerdxCenter)**2)**0.5
+sUpper=np.cumsum(dsUpper)
+sLower=np.cumsum(dsLower)
+##integration of ds, which is just summation, results in s(x), here we use cumulative summation function to perform the integral for all upper bounds
+#theta
+thetaUpper=-np.arctan(dyUpperdxCenter)
+thetaLower=np.arctan(dyLowerdxCenter)
+
+#convention from Textbook
+##since I have the ds computed, and I also can say dscostheta=dx, the equations become relatively simple. First, we hardcode for shear at wall
+ShearUpper=600*np.exp(-sUpper/(4*a))
+ShearLower=800*np.exp(-sLower/(2*a))
+Pupper,Plower=P(xcenter)
+##UPPER
+Nupper=np.sum((-Pupper*dx)-(dsUpper*ShearUpper*np.sin(thetaUpper)))
+Aupper=np.sum((-dsUpper*Pupper*np.sin(thetaUpper))-(dsUpper*ShearUpper*np.cos(thetaUpper)))
+Mupper=np.sum((dsUpper*xcenter*(Pupper*np.cos(thetaUpper)+ShearUpper*np.sin(thetaUpper)))+(dsUpper*ycenterUpper*(Pupper*np.sin(thetaUpper)-ShearUpper*np.cos(thetaUpper))))
+#Lower
+Nlower=np.sum((Plower*dx-dsLower*ShearLower*np.sin(thetaLower)))
+Alower=np.sum((dsLower*Plower*np.sin(thetaLower)+dsLower*ShearLower*np.cos(thetaLower)))
+Mlower=np.sum((xcenter*dsLower*(-Plower*np.cos(thetaLower)+ShearLower*np.sin(thetaLower)))+(dsLower*ycenterLower*(Plower*np.sin(thetaLower)-ShearLower*np.cos(thetaLower))))
+##TOTALS
+N=Nupper+Nlower
+A=Aupper+Alower
+M=Mupper+Mlower
+print('N=',N,'A=',A,'M=',M)
+#for 10 degree angle of attack
+alpha=10*np.pi/180
+L=N*np.cos(alpha)-A*np.sin(alpha)
+D=N*np.sin(alpha)+A*np.cos(alpha)
+R=((L**2)+(D**2))**0.5
+
+##dynamic Pressure
+dynamicP=52000
+Cn=N/dynamicP
+Cl=L/dynamicP
+Cd=D/dynamicP
+Cr=R/dynamicP
+Ca=A/dynamicP
+Xcp=-M/L
+print('Cn=',Cn,'Cl=',Cl,'Cd=',Cd,'Cr=',Cr,'Ca=',Ca,'Xcp=',Xcp)
+alphaSpread=np.arange(-2,16)
+alphaSpreadrad=alphaSpread*np.pi/180
+Lspread=N*np.cos(alphaSpreadrad)-A*np.sin(alphaSpreadrad)
+Dspread=N*np.sin(alphaSpreadrad)+A*np.cos(alphaSpreadrad)
+ratio=Lspread/Dspread
+print('lift=',L,'drag=',D,'Resultant=',R)
+plt.plot(alphaSpread,ratio, 'o')
+plt.xlabel('X axis')
+plt.ylabel('Y axis')
+
+plt.show()
