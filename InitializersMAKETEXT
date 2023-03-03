@@ -1,0 +1,91 @@
+
+first one is an example, second one is an example
+sample-aisin-core:
+    @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/core
+    @$(run) atomic_initiializer waterlines \
+    --volume=0.4\
+    --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_cavity.xdmf\
+    --outfile=/atomic/sample_data/aisin/initializers/outputs/cavity/cavity.msh \
+    --algo=miterless\
+    --num-ports=2
+sample-otterbox-runner-insert:
+        @mkdir -p `pwd`/../sample_data/otterbox/initializers/outputs/runner_insert/
+        @$(run) atomic_initializer waterlines \
+                --mesh-file=/atomic/sample_data/otterbox/initializers/inputs/meshing/runner_insert/runner_insert.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/runner_insert/runner_insert.msh \
+                --algo=dual-mitered \
+                --num-ports=2
+Now we will continue to make a txt file that contains various commands for running all initializers
+For each sample, for each alg, 1 corresponds to miterless, 2 corresponds to dual-mitered, 3 corresponds to thermal
+miterless:
+sample-aisin-blank_cavity-1:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/cavity
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_cavity.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_cavity1.xdmf \
+                --algo=miterless \
+                --num-ports=2
+sample-aisin-blank_cavity-2:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/cavity
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_cavity.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_cavity2.xdmf \
+                --algo=dual-mitered \
+                --num-ports=2
+sample-aisin-blank_cavity-3:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/cavity
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_cavity.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_cavity3.xdmf \
+                --algo=thermal-map \
+                --num-ports=2 \
+                --temperature-file=initial_data_0.vtu
+sample-aisin-blank_cavity-4:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/cavity
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_cavity.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_cavity4.xdmf \
+                --algo=shortest-path \
+                --num-ports=2 
+sample-aisin-blank_core-1:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/core
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_core.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_core1.xdmf \
+                --algo=miterless \
+                --num-ports=2
+sample-aisin-blank_core-2:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/core
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_core.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_core2.xdmf \
+                --algo=dual-mitered \
+                --num-ports=2
+sample-aisin-blank_core-3:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/core
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_core.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_core3.xdmf \
+                --algo=thermal-map \
+                --num-ports=2
+                --temperature-file=initial_data_0.vtu
+sample-aisin-blank_core-4:
+        @mkdir -p 'pwd' /../sample_data/aisin/initializers/outputs/core
+        @$(run) atomic_initiializer waterlines \
+                --mesh-file=/atomic/sample_data/aisin/initializers/inputs/meshing/blank_cavity/blank_core.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/cavity/blank_core4.xdmf \
+                --algo=shortest-path \
+                --num-ports=2
+sample-aisinN: sample-aisin-blank_cavity-1 sample-aisin-blank_cavity-2 sample-aisin-blank_cavity-3 sample-aisin-blank_cavity-4 sample-aisin-blank_core-1 sample-aisin-blank_core-2 sample-aisin-blank_core-3 sample-aisin-blank_core-4
+
+sample-otterbox-cavity_subinsert-1:
+        @mkdir -p `pwd`/../sample_data/otterbox/initializers/outputs/cavity_subinsert/
+        @$(run) atomic_initializer waterlines \
+                --mesh-file=/atomic/sample_data/otterbox/initializers/inputs/meshing/runner_insert/runner_insert.xdmf \
+                --outfile=/atomic/sample_data/otterbox/initializers/outputs/runner_insert/runner_insert.msh \
+                --algo=dual-mitered \
+                --num-ports=2
+
+    
+
+
