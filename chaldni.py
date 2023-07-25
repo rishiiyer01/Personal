@@ -14,7 +14,7 @@ y = np.linspace(0, dy*(ny-1), ny)
 X, Y = np.meshgrid(x, y)
 #force=np.sin(5*np.pi*X)*np.sin(5*np.pi*Y)
 u = np.zeros((nx, ny))
-u=np.sin(10*np.pi*X)*np.sin(10*np.pi*Y)
+u=np.cos(2.5*np.pi*X)*np.cos(2.5*np.pi*Y)
 unew = np.zeros((nx, ny))
 uold = np.zeros((nx, ny))
 
@@ -41,7 +41,11 @@ for it in range(nt):
 
     unew = 2 * u - uold + (c * dt / dx)**2 * (u_xplus - 2 * u + u_xminus) + \
            (c * dt / dy)**2 * (u_yplus - 2 * u + u_yminus)
-
+    # Compute Neumann boundary conditions
+    unew[0, :] = unew[1, :]
+    unew[-1, :] = unew[-2, :]
+    unew[:, 0] = unew[:, 1]
+    unew[:, -1] = unew[:, -2]
     uold, u = u.copy(), unew.copy()
 
     frames.append(u.copy())
