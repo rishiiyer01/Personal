@@ -12,33 +12,33 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-x=np.linspace(0,1.2,121)
+x=np.linspace(0,1.8,181)
 
 a=0.6
 b=0.1
 def y(x,a,b):
-    y1upper=(b/(a))*((3*x)-(2*(x**2)/a))
-    y2upper=2*b-(b/a)*x
-    y1lower=(b/(a**2))*((2*x/a)-3)*(x**2)
-    y2lower=-b+(3*b/(a**2))*((x-a)**2)-(2*b/(a**3))*((x-a)**3)
-    yUpper=np.hstack((y1upper[0:(0.5*120)],y2upper[60:121]))
-    yLower=np.hstack((y1lower[0:(0.5*120)],y2lower[60:121]))
+    y1upper=((b**2)-(b**2/a**2)*(x-a)**2)**0.5
+    y2upper=x**3*(b/(4*a**3))-x**2*(3*b/(2*a**2))+x*(9*b/(4*a))
+    y1lower=-(4*b/(9*a**2))*(3-(4*x/(3*a)))*(x**2)
+    y2lower=-b+(4*b/(3*a**2))*((x-(3*a/2))**2)-(16*b/(27*a**3))*((x-(3*a/2))**3)
+    yUpper=np.hstack((y1upper[0:60],y2upper[60:181]))
+    yLower=np.hstack((y1lower[0:90],y2lower[90:181]))
     ##calculating derivatives using finite difference convolution, O(dx^2), I could have done this analytically but there was no rule
     dx=0.01
-    kernel=[-0.5/dx,0,0.5/dx]
+    kernel=[0.5/dx,0,-0.5/dx]
     dyUpperdx=np.convolve(yUpper,kernel,mode='same')
     dyLowerdx=np.convolve(yLower,kernel,mode='same')
-    dyLowerdx[0]=0
-    dyLowerdx[120]=0
-    dyUpperdx[0]=dyLowerdx[1]
-    dyUpperdx[120]=dyUpperdx[119]
+    dyLowerdx[0]=(yLower[1]-yLower[0])/dx
+    dyLowerdx[180]=(yLower[180]-yLower[179])/dx
+    dyUpperdx[0]=(yUpper[1]-yUpper[0])/dx
+    dyUpperdx[180]=(yUpper[180]-yUpper[179])/dx
     return(yUpper,yLower,dyUpperdx,dyLowerdx)
 yUpper,yLower,dyUpperdx,dyLowerdx=y(x,a,b)
-plt.plot(x, yUpper, 'o',label='yUpper')
-plt.plot(x,yLower,'o',label='yLower')
-plt.plot(x,dyUpperdx,'o',label='dy/dx Upper')
-plt.plot(x,dyLowerdx,'o',label='dy/dx Lower')
-
+plt.plot(x, yUpper, '-',label='yUpper')
+plt.plot(x,yLower,'-',label='yLower')
+plt.plot(x,dyUpperdx,'-',label='dy/dx Upper')
+plt.plot(x,dyLowerdx,'-',label='dy/dx Lower')
+print(dyUpperdx.shape,dyLowerdx.shape)
 
 # add labels to the axes
 plt.xlabel('X axis')
@@ -46,30 +46,16 @@ plt.ylabel('Y axis')
 plt.legend()
 # show the plot
 plt.show()
-c=1.2
-xstar=x/c
-def P(xstar):
-    #function that takes in x and returns pressure
-    Pupper=(10**7)*((13.707*xstar**6)-(46.0521*xstar**5)+(57.501*xstar**4)-(32.3013*xstar**3)+(7.9526*xstar**2)-(0.789*xstar)+0.010875)
-    Plower=(10**7)*((1.54976*xstar**6)-(3.94752*xstar**5)+(3.6208*xstar**4)-(1.37922*xstar**3)+(0.166637*xstar**2)-(0.007725*xstar)+0.010875)
+c=1.8
 
-    return (Pupper,Plower)
-Pupper,Plower=P(xstar)
-plt.plot(xstar, Pupper, 'o',label='Upper Pressure')
-plt.plot(xstar,Plower,'o',label='Lower Pressure')
-plt.xlabel('X axis')
-plt.ylabel('Y axis')
-plt.legend()
-plt.show()
-##since we have passed function calls that compute the derivatives and profiles, we can make an averaging matrix (or better yet, a convolution) 
-# to compute the center values for PART C
+
 averagingKernel=[0.5,0.5]
 ycenterUpper=np.convolve(yUpper,averagingKernel,mode='valid')
 ycenterLower=np.convolve(yLower,averagingKernel,mode='valid')
 dyLowerdxCenter=np.convolve(dyLowerdx,averagingKernel,mode='valid')
 dyUpperdxCenter=np.convolve(dyUpperdx,averagingKernel,mode='valid')
 xcenter=np.convolve(x,averagingKernel,mode='valid')
-
+#print("x_Center:",xcenter,"y_center_upper",ycenterUpper,"y_center_lower",ycenterLower,"y' center upper",dyUpperdxCenter,"y' center lower",dyLowerdxCenter)
 #using ds=sqrt(1+(dy/dx^2))dx for part D
 dx=0.01
 dsUpper=dx*(1+(dyUpperdxCenter)**2)**0.5
@@ -79,21 +65,26 @@ sLower=np.cumsum(dsLower)
 ##integration of ds, which is just summation, results in s(x), here we use cumulative summation function to perform the integral for all upper bounds
 #theta
 thetaUpper=-np.arctan(dyUpperdxCenter)
-thetaLower=np.arctan(dyLowerdxCenter)
-
-#convention from Textbook
+thetaLower=-np.arctan(dyLowerdxCenter)
+#print("dsUpper",dsUpper,"dsLower",dsLower,"Supper",sUpper,"SLower",sLower,"thetaUpper",thetaUpper,"thetaLower",thetaLower)
 ##since I have the ds computed, and I also can say dscostheta=dx, the equations become relatively simple. First, we hardcode for shear at wall
-ShearUpper=600*np.exp(-sUpper/(4*a))
-ShearLower=800*np.exp(-sLower/(2*a))
-Pupper,Plower=P(xcenter)
+ShearUpper=5000*np.exp(-sUpper/(10*a))
+ShearLower=7000*np.exp(-sLower/(10*a))
+Pupper=130000*np.exp(-xcenter/(10*a))
+Plower=150000*np.exp(-xcenter/(10*a))
+#converting pressure into a function of x by dividing by cosine(theta)
+Pupper=Pupper/np.cos(thetaUpper)
+Plower=Plower/np.cos(thetaLower)
+#technically we dont have to do this, since it will get canceled anyway but might as well to keep the formula consistent, this are the formulas for P and Shear as functions of s
+
 ##UPPER
-Nupper=np.sum((-Pupper*dx)-(dsUpper*ShearUpper*np.sin(thetaUpper)))
-Aupper=np.sum((-dsUpper*Pupper*np.sin(thetaUpper))-(dsUpper*ShearUpper*np.cos(thetaUpper)))
+Nupper=np.sum((-Pupper*np.cos(thetaUpper)*dsUpper)-(dsUpper*ShearUpper*np.sin(thetaUpper)))
+Aupper=np.sum((-dsUpper*Pupper*np.sin(thetaUpper))+(dsUpper*ShearUpper*np.cos(thetaUpper)))
 Mupper=np.sum((dsUpper*xcenter*(Pupper*np.cos(thetaUpper)+ShearUpper*np.sin(thetaUpper)))+(dsUpper*ycenterUpper*(Pupper*np.sin(thetaUpper)-ShearUpper*np.cos(thetaUpper))))
 #Lower
-Nlower=np.sum((Plower*dx-dsLower*ShearLower*np.sin(thetaLower)))
+Nlower=np.sum((Plower*np.cos(thetaLower)*dsLower-dsLower*ShearLower*np.sin(thetaLower)))
 Alower=np.sum((dsLower*Plower*np.sin(thetaLower)+dsLower*ShearLower*np.cos(thetaLower)))
-Mlower=np.sum((xcenter*dsLower*(-Plower*np.cos(thetaLower)+ShearLower*np.sin(thetaLower)))+(dsLower*ycenterLower*(Plower*np.sin(thetaLower)-ShearLower*np.cos(thetaLower))))
+Mlower=np.sum((xcenter*dsLower*(-Plower*np.cos(thetaLower)+ShearLower*np.sin(thetaLower)))+(dsLower*ycenterLower*(Plower*np.sin(thetaLower)+ShearLower*np.cos(thetaLower))))
 ##TOTALS
 N=Nupper+Nlower
 A=Aupper+Alower
@@ -106,7 +97,7 @@ D=N*np.sin(alpha)+A*np.cos(alpha)
 R=((L**2)+(D**2))**0.5
 
 ##dynamic Pressure
-dynamicP=52000
+dynamicP=76946.86656
 Cn=N/dynamicP
 Cl=L/dynamicP
 Cd=D/dynamicP
