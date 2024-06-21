@@ -20,16 +20,16 @@ class DictionaryModel(nn.Module):
             num_layers=num_hidden_layers
         )
         self.cross_attention = nn.MultiheadAttention(embed_dim=hidden_size, num_heads=num_attention_heads)
-        self.fc = nn.Linear(hidden_size//2, 27)
+        self.fc = nn.Linear(hidden_size, 27)
         self.Softmax=nn.Softmax(dim=2)
         self.fcmiddle1=nn.Linear(hidden_size,hidden_size)
         self.fcmiddle2=nn.Linear(hidden_size,hidden_size)
-        self.fcmiddle3=nn.Linear(hidden_size,hidden_size//2)
+        
     def forward(self, masked_word_chars_ids, description_ids, attention_mask):
         # Pass the masked character IDs through BERT
         char_outputs = self.bert(
             masked_word_chars_ids,
-            attention_mask=masked_word_chars_ids.ne(0),
+            attention_mask=masked_word_chars_ids.ne(0), 
             token_type_ids=None  # Disable token type embeddings
         )
         char_embeddings = char_outputs.last_hidden_state
@@ -60,15 +60,14 @@ class DictionaryModel(nn.Module):
         )
         cross_attention_outputs = cross_attention_outputs.transpose(0, 1)  # Transpose back to (batch_size, seq_len, hidden_size)
         #feed forward step before mapping to vocab size
-        cross_attention_outputs=self.fcmiddle1(cross_attention_outputs)
-        cross_attention_outputs=F.gelu(cross_attention_outputs)
+        cross_attention_outputs=cross_attention_outputs
+        #cross_attention_outputs=self.fcmiddle1(cross_attention_outputs)
+        #cross_attention_outputs=F.gelu(cross_attention_outputs)
         # Project the cross attention outputs to the letter vocabulary size (essentially just taking the information from bert and using an encoder decoder architecture to
         # figure out the masked tokens)
-        cross_attention_outputs=cross_attention_outputs+char_embeddings
-        output=self.fcmiddle2(cross_attention_outputs)
         
-        output=F.gelu(output)
-        output=self.fcmiddle3(output)
+        output=self.fcmiddle2(cross_attention_outputs)+char_embeddings
+        
         output=F.gelu(output)
         output = self.fc(output)
         

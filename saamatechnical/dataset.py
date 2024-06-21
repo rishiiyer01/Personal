@@ -24,21 +24,27 @@ class DictionaryDataset(Dataset):
         # Flatten the list of lists for character IDs
         word_chars_ids = [item for sublist in word_chars for item in sublist]
         word_chars_tensor = torch.tensor(word_chars_ids)
-        # Tokenize description
-        description_ids = tokenizer(description, return_tensors="pt", padding=True, truncation=True, max_length=512).input_ids.squeeze(0)
+        
+        # Combine word and description for tokenization
+        combined_input = full_word + " [SEP] " + description
+        combined_tokens = tokenizer(combined_input, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        
         return {
             'word_chars_ids': word_chars_tensor,
-            'description_ids': description_ids,
+            'combined_ids': combined_tokens.input_ids.squeeze(0),
+            'combined_attention_mask': combined_tokens.attention_mask.squeeze(0),
             'full_word': full_word
         }
 
 def collate_fn(batch):
     word_chars_ids = pad_sequence([item['word_chars_ids'] for item in batch], batch_first=True, padding_value=tokenizer.pad_token_id)
-    description_ids = pad_sequence([item['description_ids'] for item in batch], batch_first=True, padding_value=tokenizer.pad_token_id)
+    combined_ids = pad_sequence([item['combined_ids'] for item in batch], batch_first=True, padding_value=tokenizer.pad_token_id)
+    combined_attention_mask = pad_sequence([item['combined_attention_mask'] for item in batch], batch_first=True, padding_value=0)
     full_words = [item['full_word'] for item in batch]
     return {
         'word_chars_ids': word_chars_ids,
-        'description_ids': description_ids,
+        'combined_ids': combined_ids,
+        'combined_attention_mask': combined_attention_mask,
         'full_words': full_words
     }
 
@@ -58,7 +64,13 @@ if __name__ == '__main__':
     train_loader, test_loader = get_data_loaders('dictionary.json')
     print("Train loader:")
     for batch in train_loader:
-        print(batch['word_chars_ids'].shape, batch['description_ids'].shape)
+        print("Word chars shape:", batch['word_chars_ids'].shape)
+        print("Combined tokens shape:", batch['combined_ids'].shape)
+        print("Combined attention mask shape:", batch['combined_attention_mask'].shape)
+        break
     print("Test loader:")
     for batch in test_loader:
-        print(batch['word_chars_ids'].shape, batch['description_ids'].shape)
+        print("Word chars shape:", batch['word_chars_ids'].shape)
+        print("Combined tokens shape:", batch['combined_ids'].shape)
+        print("Combined attention mask shape:", batch['combined_attention_mask'].shape)
+        break
