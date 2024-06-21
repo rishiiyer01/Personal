@@ -4,8 +4,8 @@ from transformers import BertModel
 import torch.nn.functional as F
 
 class DictionaryModel(nn.Module):
-    def __init__(self, hidden_size, num_attention_heads, num_hidden_layers):
-        super(DictionaryModel, self).__init__()
+    def init(self, hidden_size, num_attention_heads, num_hidden_layers):
+        super(DictionaryModel, self).init()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         self.hidden_size = hidden_size
         self.num_attention_heads = num_attention_heads
@@ -24,7 +24,7 @@ class DictionaryModel(nn.Module):
         self.Softmax=nn.Softmax(dim=2)
         self.fcmiddle1=nn.Linear(hidden_size,hidden_size)
         self.fcmiddle2=nn.Linear(hidden_size,hidden_size)
-        
+
     def forward(self, masked_word_chars_ids, description_ids, attention_mask):
         # Pass the masked character IDs through BERT
         char_outputs = self.bert(
@@ -53,7 +53,7 @@ class DictionaryModel(nn.Module):
         #encoder_outputs=self.fcmiddle1(encoder_outputs)
         #encoder_outputs=F.gelu(encoder_outputs)
         # Perform cross attention between the character embeddings and the description embeddings
-        cross_attention_outputs ,_  = self.cross_attention(
+        cross_attentionoutputs ,  = self.cross_attention(
             query=char_embeddings.transpose(0, 1),  # Transpose to (seq_len, batch_size, hidden_size)
             key=description_embeddings.transpose(0, 1),
             value=description_embeddings.transpose(0, 1)
@@ -65,11 +65,11 @@ class DictionaryModel(nn.Module):
         #cross_attention_outputs=F.gelu(cross_attention_outputs)
         # Project the cross attention outputs to the letter vocabulary size (essentially just taking the information from bert and using an encoder decoder architecture to
         # figure out the masked tokens)
-        
+
         output=self.fcmiddle2(cross_attention_outputs)+char_embeddings
-        
+
         output=F.gelu(output)
         output = self.fc(output)
-        
+
         output=self.Softmax(output)
         return output
