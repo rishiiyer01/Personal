@@ -7,10 +7,10 @@ from tqdm import tqdm
 # Hyperparameters
 vocab_size = 27 # 26 letters of the alphabet + pad token
 hidden_size = 256
-num_attention_heads = 4
-num_hidden_layers = 4
-learning_rate = 1e-3
-epochs = 5
+num_attention_heads = 8
+num_hidden_layers = 6
+learning_rate = 3e-4
+epochs = 8
 mask_token_id = 103  # mask token id
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -78,6 +78,6 @@ def train(train_loader,test_loader):
 
     torch.save(model.state_dict(), 'model.pth')
 
-if name == 'main':
+if __name__ == '__main__':
     train_loader,test_loader = get_data_loaders('dictionary.json', batch_size=16)
     train(train_loader,test_loader)
